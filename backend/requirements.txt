@@ -1,7 +1,31 @@
+# FastAPI and Web Framework
 fastapi
 uvicorn
 python-dotenv
 pydantic
+
+
+# Data Processing
+pandas
+numpy
+
+# AI/ML Libraries
+google-generativeai
+openai
+langgraph
+langchain
+langchain-google-genai
+
+# Presentation Generation
+python-pptx
+
+# Optional: For XBRL parsing
+# python-xbrl
+
+# Optional: For Excel support
+openpyxl
+xlrd
+
 python-pptx
 langgraph>=0.1.0
 google-generativeai>=0.5.0

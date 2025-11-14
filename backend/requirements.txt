@@ -4,6 +4,7 @@ uvicorn
 python-dotenv
 pydantic
 
+
 # Data Processing
 pandas
 numpy
@@ -24,3 +25,7 @@ python-pptx
 # Optional: For Excel support
 openpyxl
 xlrd
+
+python-pptx
+langgraph>=0.1.0
+google-generativeai>=0.5.0

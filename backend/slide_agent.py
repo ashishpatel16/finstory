@@ -381,6 +381,7 @@ class GeminiPlanner:
             "You are a financial storytelling assistant. "
             "Analyze the prompt and company_data JSON below. "
             f"{tool_instruction()}\n"
+            "Keep slide titles simple (2-4 words) and under 40 characters.\n"
             "Return ONLY JSON with the schema:\n"
             "{\n"
             '  "narrative_highlights": ["sentence", ...],\n'
@@ -414,6 +415,27 @@ CUSTOM_TOPIC_KEYWORDS = {
 }
 
 
+TITLE_FALLBACK = "Update"
+MAX_TITLE_LENGTH = 44
+
+
+def normalize_title_text(raw_title: Optional[str], fallback: str = TITLE_FALLBACK) -> str:
+    title = (raw_title or "").strip()
+    if not title:
+        title = fallback
+    # Keep only the first sentence/phrase to avoid long descriptions
+    primary = re.split(r"[.!?\n]", title, 1)[0].strip()
+    if primary:
+        title = primary
+    if len(title) > MAX_TITLE_LENGTH:
+        truncated = title[:MAX_TITLE_LENGTH].rstrip()
+        last_space = truncated.rfind(" ")
+        if last_space > 20:
+            truncated = truncated[:last_space]
+        title = truncated.rstrip(" -–—,:;")
+    return title or fallback
+
+
 def split_sentences(prompt: str) -> List[str]:
     normalized = prompt.replace("\r", " ")
     parts = re.split(r'(?<=[.!?])\s+|\n', normalized)
@@ -439,7 +461,7 @@ def parse_explicit_slide_requests(prompt: str) -> List[Dict[str, Any]]:
         if bullets:
             slides.append({
                 "type": "content",
-                "title": title.strip().title(),
+                "title": normalize_title_text(title.strip().title()),
                 "content": {"type": "bullets", "items": bullets[:6]},
             })
     return slides
@@ -462,7 +484,7 @@ def extract_topic_slides(prompt: str) -> List[Dict[str, Any]]:
         if matched:
             slides.append({
                 "type": "content",
-                "title": title,
+                "title": normalize_title_text(title),
                 "content": {"type": "bullets", "items": matched},
             })
     return slides
@@ -497,7 +519,7 @@ def build_financial_snapshot_slide(company_data: Dict[str, Any]) -> Dict[str, An
     ]
     return {
         "type": "content",
-        "title": "Financial Snapshot",
+        "title": normalize_title_text("Financial Snapshot"),
         "content": {"type": "bullets", "items": bullets},
     }
 
@@ -508,7 +530,7 @@ def build_prompt_summary_slide(prompt: str) -> Dict[str, Any]:
         sentences = ["Custom insights requested via prompt."]
     return {
         "type": "content",
-        "title": "Narrative Highlights",
+        "title": normalize_title_text("Narrative Highlights"),
         "content": {"type": "bullets", "items": sentences},
     }
 
@@ -611,7 +633,7 @@ class SlideAgent:
         if isinstance(narrative, list) and narrative:
             updates["llm_narrative"] = narrative
             narrative_slide = {
-                "title": "Narrative Highlights",
+                "title": normalize_title_text("Narrative Highlights"),
                 "content": {"type": "bullets", "items": narrative[:6]},
             }
             merged = self._merge_slides(
@@ -662,7 +684,8 @@ class SlideAgent:
     @staticmethod
     def _tool_to_slide(call: Dict[str, Any], company_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         tool = (call.get("tool") or call.get("type") or "").lower()
-        title = call.get("title") or company_data.get("company_name", "Update")
+        fallback_title = company_data.get("company_name", TITLE_FALLBACK)
+        title = normalize_title_text(call.get("title"), fallback=fallback_title)
 
         if tool == "hero":
             subtitle = call.get("subtitle") or company_data.get("quarter", "")
@@ -725,7 +748,8 @@ class SlideAgent:
         seen_titles: set[str] = set()
 
         def add_slide(slide: Dict[str, Any]):
-            title = slide.get("title", "").strip()
+            title = normalize_title_text(slide.get("title"))
+            slide = {**slide, "title": title}
             key = title.lower()
             if key in seen_titles:
                 return

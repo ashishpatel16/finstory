@@ -28,16 +28,37 @@ class PresentationTheme:
     font_family_body: str = "Inter"
 
 
-DEFAULT_THEME = PresentationTheme(
-    background_color=RGBColor(245, 249, 255),        # Arctic mist
-    heading_level_one_color=RGBColor(15, 76, 129),   # Deep sapphire
-    heading_level_two_color=RGBColor(56, 189, 248),  # Sky cyan
-    text_color=RGBColor(30, 41, 59),                 # Slate navy
-    surface_color=RGBColor(255, 255, 255),           # Pure white cards
-    accent_color=RGBColor(79, 70, 229),              # Indigo accent
+FINSTORY_BRAND_THEME = PresentationTheme(
+    background_color=RGBColor(255, 255, 255),        # Clean white canvas
+    heading_level_one_color=RGBColor(37, 99, 235),   # Brand royal blue
+    heading_level_two_color=RGBColor(59, 130, 246),  # Bright accent blue
+    text_color=RGBColor(17, 24, 39),                 # Charcoal text
+    surface_color=RGBColor(255, 255, 255),           # Card white
+    accent_color=RGBColor(37, 99, 235),              # Brand accent blue
     positive_color=RGBColor(34, 197, 94),            # Success green
     negative_color=RGBColor(239, 68, 68),            # Alert red
 )
+
+DEFAULT_THEME = FINSTORY_BRAND_THEME
+
+
+def apply_brand_palette(theme: PresentationTheme) -> PresentationTheme:
+    """
+    Force every slide theme to use the finstory brand colors while still
+    allowing font overrides coming from higher-level style hints.
+    """
+    return PresentationTheme(
+        background_color=FINSTORY_BRAND_THEME.background_color,
+        heading_level_one_color=FINSTORY_BRAND_THEME.heading_level_one_color,
+        heading_level_two_color=FINSTORY_BRAND_THEME.heading_level_two_color,
+        text_color=FINSTORY_BRAND_THEME.text_color,
+        surface_color=FINSTORY_BRAND_THEME.surface_color,
+        accent_color=FINSTORY_BRAND_THEME.accent_color,
+        positive_color=FINSTORY_BRAND_THEME.positive_color,
+        negative_color=FINSTORY_BRAND_THEME.negative_color,
+        font_family_heading=theme.font_family_heading,
+        font_family_body=theme.font_family_body,
+    )
 
 
 class SlideGenerator:
@@ -59,7 +80,7 @@ class SlideGenerator:
         self.prs = Presentation()
         self.prs.slide_width = Inches(width)
         self.prs.slide_height = Inches(height)
-        self.theme = theme or DEFAULT_THEME
+        self.theme = apply_brand_palette(theme or DEFAULT_THEME)
     
     @staticmethod
     def _title_font_size(text: str) -> int:
